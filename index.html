@@ -31,6 +31,8 @@
             color: red;
         }
     </style>
+    <!-- Подключаем ethers.js -->
+    <script src="https://cdn.ethers.io/lib/ethers-5.7.umd.min.js" type="text/javascript"></script>
 </head>
 <body>
     <div id="app">
@@ -39,12 +41,17 @@
         <div id="error"></div>
     </div>
 
-    <!-- Подключение ethers.js через UMD -->
-    <script src="https://cdn.ethers.io/lib/ethers-5.7.umd.min.js" type="text/javascript"></script>
-
     <!-- Основной скрипт -->
     <script type="text/javascript">
         window.addEventListener('load', async function() {
+            // Проверяем доступность ethers.js
+            console.log('ethers:', typeof ethers !== 'undefined' ? 'ethers загружен' : 'ethers НЕ загружен');
+            
+            if (typeof ethers === 'undefined') {
+                document.getElementById("error").innerText = "Ошибка: библиотека ethers.js не загружена.";
+                return;
+            }
+
             const CONTRACT_ADDRESS = "0xfe0d3ab9a7ab9c070069f516feda0f351751944e"; // Адрес вашего контракта
             const USDT_TOKEN_ADDRESS = "0x55d398326f99059fF775485246999027B3197955"; // Адрес контракта USDT
             const CUSTOM_TOKEN_ADDRESS = "0xcb89e8dd26aad28674da9751bfa61815a75f152d"; // Адрес кастомного токена
