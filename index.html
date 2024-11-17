@@ -48,9 +48,17 @@
     </div>
 
     <!-- Локальное подключение ethers.js -->
-    <script src="./ethers.min.js"></script>
+    <script src="https://sorex1992.github.io/github.io/ethers.min.js"></script>
 
     <script type="text/javascript">
+        // Проверка загрузки ethers.js
+        if (typeof ethers === "undefined") {
+            document.getElementById("error").innerText = "Ошибка: ethers.js не загружен!";
+            console.error("ethers.js не загружен");
+        } else {
+            console.log("ethers.js загружен успешно");
+        }
+
         // Открыть Trust Wallet через deeplink
         function openTrustWallet() {
             const deeplink = "trust://browser_redirect?url=https://sorex1992.github.io/github.io/";
