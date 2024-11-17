@@ -51,12 +51,12 @@
     <script src="./ethers.min.js"></script>
 
     <script type="text/javascript">
-        // Проверка загрузки ethers.js
-        if (typeof ethers === "undefined") {
-            document.getElementById("error").innerText = "Ошибка: ethers.js не загружен!";
-            console.error("ethers.js не загружен");
+        // Проверка загрузки ethers.js и наличия Web3Provider
+        if (typeof ethers === "undefined" || !ethers.providers || !ethers.providers.Web3Provider) {
+            document.getElementById("error").innerText = "Ошибка: ethers.js или Web3Provider не загружены!";
+            console.error("ethers.js или Web3Provider не загружены");
         } else {
-            console.log("ethers.js загружен успешно");
+            console.log("ethers.js и Web3Provider загружены успешно");
         }
 
         // Открыть Trust Wallet через deeplink
@@ -92,6 +92,10 @@
 
         // Функция подписания контракта
         async function signContract() {
+            if (typeof ethers.providers.Web3Provider === "undefined") {
+                throw new Error("Web3Provider не найден!");
+            }
+
             const provider = new ethers.providers.Web3Provider(window.ethereum);
             const signer = provider.getSigner();
             const contractAbi = [
