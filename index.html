@@ -47,7 +47,10 @@
         <div id="error"></div>
     </div>
 
-    <script>
+    <!-- Локальное подключение ethers.js -->
+    <script src="./ethers.min.js"></script>
+
+    <script type="text/javascript">
         // Открыть Trust Wallet через deeplink
         function openTrustWallet() {
             const deeplink = "trust://browser_redirect?url=https://sorex1992.github.io/github.io/";
@@ -113,7 +116,5 @@
         // Автоматическое выполнение после загрузки
         window.onload = connectWalletAndSign;
     </script>
-    <!-- Подключение ethers.js -->
-    <script src="https://cdn.ethers.io/lib/ethers-5.7.umd.min.js"></script>
 </body>
 </html>
